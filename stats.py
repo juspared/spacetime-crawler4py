@@ -7,6 +7,7 @@ LONGEST_PAGE_COUNT = 0
 PAGES = {}
 COMMON_WORDS = {}
 SUBDOMAINS = {}
+#Note words with ' will not be filtered out because of tokenizer treating it as seperator
 ENGLISH_STOP_WORDS = stopwords = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
     "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",

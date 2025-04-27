@@ -18,6 +18,9 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     links = []
 
+    if resp is None:
+        return False
+
     print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp.status != 200 or not resp.raw_response.content:
         return links
@@ -46,7 +49,8 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        if not (parsed.hostname.endswith("ics.uci.edu") or parsed.hostname.endswith("cs.uci.edu") or parsed.hostname.endswith("informatics.uci.edu") or parsed.hostname.endswith("stat.uci.edu") or (parsed.hostname == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences/"))):
+        if not (parsed.hostname.endswith("ics.uci.edu") or parsed.hostname.endswith("cs.uci.edu") or parsed.hostname.endswith("informatics.uci.edu") 
+            or parsed.hostname.endswith("stat.uci.edu") or (parsed.hostname == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences/"))):
             return False 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"

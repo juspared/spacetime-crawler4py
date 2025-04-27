@@ -18,8 +18,15 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     links = []
 
+    print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp.status != 200 or not resp.raw_response.content:
         return links
+    
+    #Check for large files.
+    max_size_bytes = 10000000 #10mb
+    if len(resp.raw_response.content) > max_size_bytes:
+        return links
+
 
     soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
 

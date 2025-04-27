@@ -52,7 +52,7 @@ def calculate_stats(resp):
     unique_pages(url)
     
     text = soup.get_text()
-    tokens = tokenizer(text)
+    tokens = tokenize(text)
     calculate_num_words(url, tokens)
     computeWordFrequencies(tokens)
 
@@ -91,16 +91,16 @@ def tokenize(text) -> list:
     tokens = []
     word = ""
     word_chars = []
-        for char in text:
-            if (char.isascii() and char.isalnum()):
-                word_chars.append(char)
-            else:
-                if word_chars:
-                    tokens.append("".join(word_chars).lower())
-                    word_chars = []
-        # Append last word if exists
-        if word_chars:
-            tokens.append("".join(word_chars).lower())
+    for char in text:
+        if (char.isascii() and char.isalnum()):
+            word_chars.append(char)
+        else:
+            if word_chars:
+                tokens.append("".join(word_chars).lower())
+                word_chars = []
+    # Append last word if exists
+    if word_chars:
+        tokens.append("".join(word_chars).lower())
     return tokens
 
 
@@ -114,7 +114,7 @@ def write_stats() -> None:
         sorted_words = sorted(COMMON_WORDS.items(), key = lambda freq:freq[1], reverse = True)
         file.write(f"50 most common words\n")
         for word, freq in sorted_words[:50]:
-            file.write(f"{word} - {count}\n")
+            file.write(f"{word} - {freq}\n")
 
         #Sorts subdomain alphabetically
         sorted_sub = sorted(SUBDOMAINS.items(), key = lambda freq:freq[0])

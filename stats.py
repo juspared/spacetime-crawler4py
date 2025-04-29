@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+import json
+import os
 
 UNIQUE_PAGES = 0
 LONGEST_PAGE = 0
@@ -7,6 +9,7 @@ LONGEST_PAGE_COUNT = 0
 PAGES = set()
 COMMON_WORDS = {}
 SUBDOMAINS = {}
+INITIAL_LOAD = True
 #Note words with ' will not be filtered out because of tokenizer treating it as seperator
 ENGLISH_STOP_WORDS = stopwords = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
@@ -40,6 +43,12 @@ exist and load values from there into global variables
 '''
 #Main function for calculating all stats
 def calculate_stats(resp):
+    global INITIAL_LOAD
+
+    #the json exists and this is the first run of calculate stats load the stats from json
+    if INITIAL_LOAD and os.path.exists("stats.json"):
+        INITIAL_LOAD = False
+        load_stats()
 
     soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
 
@@ -47,7 +56,7 @@ def calculate_stats(resp):
     url = parsed_url._replace(fragment="").geturl()
     
     subdomain = parsed_url.hostname.split('.')[0]
-    calcuate_subdomains(subdomain)
+    calculate_subdomains(subdomain)
     
     unique_pages(url)
     
@@ -55,6 +64,10 @@ def calculate_stats(resp):
     tokens = tokenize(text)
     calculate_num_words(url, tokens)
     computeWordFrequencies(tokens)
+
+    #Every 50 pages update stats in json
+    if UNIQUE_PAGES % 50 == 0:
+        write_stats()
 
 
 #Computes the number of unique pages
@@ -75,7 +88,7 @@ def calculate_num_words(url, tokens) -> None:
 
 
 #Adds instance of subdomain to dictionary or increases frequency of instance
-def calcuate_subdomains(subdomain) -> None:
+def calculate_subdomains(subdomain) -> None:
     SUBDOMAINS[subdomain] = SUBDOMAINS.get(subdomain, 0) + 1
 
 
@@ -104,9 +117,38 @@ def tokenize(text) -> list:
     return tokens
 
 
-#Write down global stats to txt file
+#Dump stats data to json file
 def write_stats() -> None:
-    with open('stats.txt', 'w') as file:
+    stats = {
+        "unique_pages": UNIQUE_PAGES,
+        "longest_page": LONGEST_PAGE,
+        "longest_page_count": LONGEST_PAGE_COUNT,
+        "pages": list(PAGES),
+        "common_words": COMMON_WORDS,
+        "subdomains": SUBDOMAINS,
+    }
+    with open('stats.json', 'w', encoding="utf8") as file:
+        json.dump(stats, file, indent=4, ensure_ascii = True)
+
+
+#Loads data from json file
+def load_stats():
+    global UNIQUE_PAGES, LONGEST_PAGE, LONGEST_PAGE_COUNT, PAGES, COMMON_WORDS, SUBDOMAINS
+
+    with open('stats.json', 'r') as file:
+        data = json.load(file)
+
+        UNIQUE_PAGES = data["unique_pages"]
+        LONGEST_PAGE = data["longest_page"]
+        LONGEST_PAGE_COUNT = data["longest_page_count"]
+        PAGES = set(data["pages"])
+        COMMON_WORDS = data["common_words"]
+        SUBDOMAINS = data["subdomains"]
+
+
+#Write down global stats to txt file
+def write_report_stats() -> None:
+    with open('report.txt', 'w') as file:
         file.write(f"Unique Pages: {UNIQUE_PAGES}\n")
         file.write(f"Longest Pages Word Count: {LONGEST_PAGE_COUNT}\n")
 

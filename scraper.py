@@ -21,6 +21,10 @@ def extract_next_links(url, resp):
     links = set()
 
     # print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
+    if resp is None:
+        return False
+
+    print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp.status != 200 or not resp.raw_response.content:
         return list(links)
     
@@ -52,7 +56,8 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        if not (parsed.hostname.endswith("ics.uci.edu") or parsed.hostname.endswith("cs.uci.edu") or parsed.hostname.endswith("informatics.uci.edu") or parsed.hostname.endswith("stat.uci.edu") or (parsed.hostname == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences/"))):
+        if not (parsed.hostname.endswith("ics.uci.edu") or parsed.hostname.endswith("cs.uci.edu") or parsed.hostname.endswith("informatics.uci.edu") 
+            or parsed.hostname.endswith("stat.uci.edu") or (parsed.hostname == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences/"))):
             return False
 
         if re.search(r"\b\d{1,4}\-\d{1,2}\-\d{1,2}\b", url.lower()) != None:

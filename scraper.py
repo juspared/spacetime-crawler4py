@@ -1,6 +1,8 @@
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+from urllib.parse import urldefrag
+from stats import calculate_stats
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -16,27 +18,31 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    links = []
+    links = set()
 
-    print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
+    # print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp.status != 200 or not resp.raw_response.content:
-        return links
+        return list(links)
     
     #Check for large files.
     max_size_bytes = 10000000 #10mb
     if len(resp.raw_response.content) > max_size_bytes:
-        return links
+        return list(links)
 
+    if is_valid(url):
+        calculate_stats(resp)
 
     soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
 
     for link in soup.find_all('a', href=True):
-        url = link.get('href')
-        print(url)
+        href = link.get('href')
+        defrag_url = urldefrag(href)[0]
+        absolute = urljoin(resp.url, defrag_url)
+        # print(url)
         
-        links.append(url)
+        links.add(absolute)
 
-    return links
+    return list(links)
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -47,7 +53,21 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             return False
         if not (parsed.hostname.endswith("ics.uci.edu") or parsed.hostname.endswith("cs.uci.edu") or parsed.hostname.endswith("informatics.uci.edu") or parsed.hostname.endswith("stat.uci.edu") or (parsed.hostname == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences/"))):
-            return False 
+            return False
+
+        if re.search(r"\b\d{1,4}\-\d{1,2}\-\d{1,2}\b", url.lower()) != None:
+            return False
+
+        if re.search(r"\b\d{4}-\d{2}\b", url.lower()) != None:
+            return False
+        
+        n = re.search(r"page\/(\d+)(?:\/|$)", url.lower())
+        if n:
+            page = int(n.group(1))
+            if page > 20:
+                return False
+
+
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"

@@ -20,11 +20,10 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     links = set()
 
-    # print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp is None:
         return False
 
-    print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
+    # print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp.status != 200 or not resp.raw_response.content:
         return list(links)
     
@@ -60,12 +59,15 @@ def is_valid(url):
             or parsed.hostname.endswith("stat.uci.edu") or (parsed.hostname == "today.uci.edu" and parsed.path.startswith("/department/information_computer_sciences/"))):
             return False
 
+        #Searches for yyyy-mm-dd formats and filters out url with it
         if re.search(r"\b\d{1,4}\-\d{1,2}\-\d{1,2}\b", url.lower()) != None:
             return False
 
+        #Searches for yyyy-dd formats and filters out url with it
         if re.search(r"\b\d{4}-\d{2}\b", url.lower()) != None:
             return False
         
+        #Searches for page/(Some Nubmer) if number > 20 filters it out
         n = re.search(r"page\/(\d+)(?:\/|$)", url.lower())
         if n:
             page = int(n.group(1))

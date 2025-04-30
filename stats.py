@@ -42,15 +42,13 @@ Can also add loader function to detect if stats.txt
 exist and load values from there into global variables
 '''
 #Main function for calculating all stats
-def calculate_stats(resp):
-    global INITIAL_LOAD
+def calculate_stats(resp, text):
+    global INITIAL_LOAD, COMMON_WORDS
 
     #the json exists and this is the first run of calculate stats load the stats from json
     if INITIAL_LOAD and os.path.exists("stats.json"):
         INITIAL_LOAD = False
         load_stats()
-
-    soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
 
     parsed_url = urlparse(resp.raw_response.url)
     url = parsed_url._replace(fragment="").geturl()
@@ -60,14 +58,16 @@ def calculate_stats(resp):
     
     unique_pages(url)
     
-    text = soup.get_text()
+    # text = soup.get_text()
     tokens = tokenize(text)
     calculate_num_words(url, tokens)
     computeWordFrequencies(tokens)
 
-    #Every 50 pages update stats in json
+    #Every 50 pages update stats in json; Slices common words so it doesn't grow infinitly big
     if UNIQUE_PAGES % 50 == 0:
-        write_stats()
+        sorted_common_words = sorted(COMMON_WORDS.items(), key=lambda value: value[1], reverse=True)
+        COMMON_WORDS = dict(sorted_common_words[:1000])
+        write_stats(sorted_common_words)
 
 
 #Computes the number of unique pages
@@ -95,7 +95,7 @@ def calculate_subdomains(subdomain) -> None:
 #Adds instance of word to dictionary or increases frequency of word
 def computeWordFrequencies(TokenList) -> None:
     for word in TokenList:
-        if not word in ENGLISH_STOP_WORDS:
+        if not word in ENGLISH_STOP_WORDS and len(word) > 2:
             COMMON_WORDS[word] = COMMON_WORDS.get(word, 0) + 1
 
 
@@ -118,17 +118,18 @@ def tokenize(text) -> list:
 
 
 #Dump stats data to json file
-def write_stats() -> None:
+def write_stats(sorted_words) -> None:
+    
     stats = {
         "unique_pages": UNIQUE_PAGES,
         "longest_page": LONGEST_PAGE,
         "longest_page_count": LONGEST_PAGE_COUNT,
         "pages": list(PAGES),
-        "common_words": COMMON_WORDS,
+        "common_words": dict(sorted_words[:500]),
         "subdomains": SUBDOMAINS,
     }
     with open('stats.json', 'w', encoding="utf8") as file:
-        json.dump(stats, file, indent=4, ensure_ascii = True)
+        json.dump(stats, file, indent=4, ensure_ascii = False)
 
 
 #Loads data from json file

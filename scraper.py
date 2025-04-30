@@ -21,7 +21,7 @@ def extract_next_links(url, resp):
     links = set()
 
     if resp is None:
-        return False
+        return []
 
     # print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
     if resp.status != 200 or not resp.raw_response.content:
@@ -32,10 +32,21 @@ def extract_next_links(url, resp):
     if len(resp.raw_response.content) > max_size_bytes:
         return list(links)
 
-    if is_valid(url):
-        calculate_stats(resp)
+    # soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+    soup = BeautifulSoup(resp.raw_response.content, 'lxml')
+    readable_text = soup.get_text()
 
-    soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+    #Check to make sure page has over 100 charcters of readable text
+    if len(readable_text) < 10:
+        return []
+
+    #Checks ratio of html to human text to make sure page is not full of fluff
+    # if not has_good_word_ratio(resp.raw_response.content, readable_text):
+    #     return []
+    
+    #Only calculate stats for valid pages
+    if is_valid(url):
+        calculate_stats(resp, readable_text)
 
     for link in soup.find_all('a', href=True):
         href = link.get('href')
@@ -47,12 +58,19 @@ def extract_next_links(url, resp):
 
     return list(links)
 
+def has_good_word_ratio(html_text, human_text):
+    return len(human_text) / len(html_text) > .10
+
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
     try:
         parsed = urlparse(url)
+
+        if not parsed.hostname:
+            return False
+
         if parsed.scheme not in set(["http", "https"]):
             return False
         if not (parsed.hostname.endswith("ics.uci.edu") or parsed.hostname.endswith("cs.uci.edu") or parsed.hostname.endswith("informatics.uci.edu") 
@@ -73,7 +91,22 @@ def is_valid(url):
             page = int(n.group(1))
             if page > 20:
                 return False
+        
+        #Takes to long
+        if re.search(r"gitlab.ics.uci.edu|login", url) != None:
+            return False
 
+        #Billion pages of nothingness
+        if re.search(r"/~eppstein/", parsed.path.lower()) != None:
+            return False
+        
+        #Junk
+        if re.search(r"(?:share=|do=|rev=|idx=|ical)", parsed.query.lower()) != None:
+            return False
+        
+        #IDK these killed the crawler
+        if re.search(r"apk|war|img|sql|bam", parsed.path.lower()) != None:
+            return False
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"

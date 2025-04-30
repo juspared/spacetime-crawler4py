@@ -51,7 +51,10 @@ def extract_next_links(url, resp):
     for link in soup.find_all('a', href=True):
         href = link.get('href')
         defrag_url = urldefrag(href)[0]
-        absolute = urljoin(resp.url, defrag_url)
+        try:
+            absolute = urljoin(resp.url, defrag_url)
+        except ValueError:
+            continue
         # print(url)
         
         links.add(absolute)
@@ -97,15 +100,15 @@ def is_valid(url):
             return False
 
         #Billion pages of nothingness
-        if re.search(r"/~eppstein/", parsed.path.lower()) != None:
+        if re.search(r"/~eppstein/|zip-attachment", parsed.path.lower()) != None:
             return False
         
         #Junk
-        if re.search(r"(?:share=|do=|rev=|idx=|ical)", parsed.query.lower()) != None:
+        if re.search(r"(?:share=|do=|rev=|idx=|ical|action=|version=|format=txt)", parsed.query.lower()) != None:
             return False
         
         #IDK these killed the crawler
-        if re.search(r"apk|war|img|sql|bam", parsed.path.lower()) != None:
+        if re.search(r"apk|war|img|sql|bam|ppsx", parsed.path.lower()) != None:
             return False
 
         return not re.match(

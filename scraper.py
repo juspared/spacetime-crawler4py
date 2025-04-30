@@ -20,7 +20,7 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     links = set()
 
-    if resp is None:
+    if resp is None or resp.raw_response is None:
         return []
 
     # print(f"{resp.url} || status: {resp.status} || Error: {resp.error}")
@@ -104,7 +104,7 @@ def is_valid(url):
             return False
         
         #Junk
-        if re.search(r"(?:share=|do=|rev=|idx=|ical|action=|version=|format=txt)", parsed.query.lower()) != None:
+        if re.search(r"(?:share=|do=|rev=|idx=|ical|action=|version=|format=txt|p=pingpong|.git)", parsed.query.lower()) != None:
             return False
         
         #IDK these killed the crawler

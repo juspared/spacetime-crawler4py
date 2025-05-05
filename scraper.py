@@ -100,7 +100,7 @@ def is_valid(url):
             return False
 
         #Billion pages of nothingness
-        if re.search(r"/~eppstein/|zip-attachment", parsed.path.lower()) != None:
+        if re.search(r"/~eppstein/|zip-attachment|~doemer", parsed.path.lower()) != None:
             return False
         
         #Junk
@@ -110,6 +110,12 @@ def is_valid(url):
         #IDK these killed the crawler
         if re.search(r"apk|war|img|sql|bam|ppsx", parsed.path.lower()) != None:
             return False
+
+        #Check to remove endless reapeting url
+        paths = [x for x in parsed.path.split('/') if x]
+        if len(paths) > 4:
+            if any(paths.count(seg) >= 2 for seg in paths):
+                return False
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
